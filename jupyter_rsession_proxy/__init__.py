@@ -51,7 +51,14 @@ def get_system_user():
         user = os.environ.get('NB_USER', getpass.getuser())
     return(user)
 
-def setup_rserver():
+def setup_rserver(name='RStudio',url_name='rstudio',config_file=None):
+    """
+    name:        Name of the proxy to be shown on Jupyter's interface. 
+    url_name:    This must be the same as the name used in  
+                 entry_points['jupyter_serverproxy_servers'] of setup.py
+    config_file: An optional rserver configuration file.
+    """
+
     def _get_env(port):
         return dict(USER=get_system_user())
 
@@ -78,7 +85,7 @@ def setup_rserver():
         ret = subprocess.check_output([get_rstudio_executable('rserver'), '--help'])
         return ret.decode().find(arg) != -1
 
-    def _get_cmd(port):
+    def _get_cmd(port,url_name='rstudio',config_file=None):
         ntf = tempfile.NamedTemporaryFile()
 
         # use mkdtemp() so the directory and its contents don't vanish when
@@ -97,8 +104,11 @@ def setup_rserver():
         ]
         # Support at least v1.2.1335 and up
 
+        if config_file != None:
+            cmd.append('--config-file=' + config_file)
+        
         if _support_arg('www-root-path'):
-            cmd.append('--www-root-path={base_url}rstudio/')
+            cmd.append('--www-root-path={base_url}' + url_name + '/')
         if _support_arg('server-data-dir'):
             cmd.append(f'--server-data-dir={server_data_dir}')
         if _support_arg('database-config-file'):
@@ -107,11 +117,11 @@ def setup_rserver():
         return cmd
 
     server_process = {
-        'command': _get_cmd,
+        'command': _get_cmd('{port}',url_name,config_file),
         'environment': _get_env,
         'rewrite_response': rewrite_auth,
         'launcher_entry': {
-            'title': 'RStudio',
+            'title': name,
             'icon_path': get_icon_path()
         }
     }
