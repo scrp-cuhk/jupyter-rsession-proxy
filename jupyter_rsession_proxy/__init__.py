@@ -31,18 +31,17 @@ def get_icon_path():
         os.path.dirname(os.path.abspath(__file__)), 'icons', 'rstudio.svg'
     )
 
-def rewrite_auth(response, request):
+def rewrite_netloc(response, request):
     '''
-       As of rstudio-server 1.4ish, it would send the client to /auth-sign-in
-       rather than what the client sees as the full URL followed by
-       /auth-sign-in. See rstudio/rstudio#8888. We rewrite the response by
-       sending the client to the right place.
+       In some circumstances, rstudio-server appends a port to the URL while
+       setting Location in the header. We rewrite the response to use the host
+       in the request.
     '''
     for header, v in response.headers.get_all():
-        if header == "Location" and v.startswith("/auth-sign-in"):
-            # Visit the correct page
-            u = urlparse(request.uri)
-            response.headers[header] = urlunparse(u._replace(path=u.path+v))
+        if header == "Location":
+            u = urlparse(v)
+            if u.netloc != request.host:
+                response.headers[header] = urlunparse(u._replace(netloc=request.host))
 
 def get_system_user():
     try:
@@ -116,10 +115,14 @@ def setup_rserver(name='rstudio', title='RStudio', config_file=None):
 
         return cmd
 
+    def _get_timeout(default=15):
+        return os.getenv('RSERVER_TIMEOUT', default)
+
     server_process = {
-        'command': _get_cmd('{port}',name,config_file),
+        'command': _get_cmd,
+        'timeout': _get_timeout(),
         'environment': _get_env,
-        'rewrite_response': rewrite_auth,
+        'rewrite_response': rewrite_netloc,
         'launcher_entry': {
             'title': title,
             'icon_path': get_icon_path()
@@ -158,8 +161,12 @@ def setup_rsession():
             '--www-port=' + str(port)
         ]
 
+    def _get_timeout(default=15):
+        return os.getenv('RSESSION_TIMEOUT', default)
+
     return {
         'command': _get_cmd,
+        'timeout': _get_timeout(),
         'environment': _get_env,
         'launcher_entry': {
             'title': 'RStudio',
