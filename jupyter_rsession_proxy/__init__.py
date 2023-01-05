@@ -119,7 +119,7 @@ def setup_rserver(name='rstudio', title='RStudio', config_file=None):
         return os.getenv('RSERVER_TIMEOUT', default)
 
     server_process = {
-        'command': _get_cmd,
+        'command': _get_cmd('{port}',name,config_file),
         'timeout': _get_timeout(),
         'environment': _get_env,
         'rewrite_response': rewrite_netloc,
