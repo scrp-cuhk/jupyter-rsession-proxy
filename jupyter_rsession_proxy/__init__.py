@@ -116,7 +116,10 @@ def setup_rserver(name='rstudio', title='RStudio', config_file=None):
         return cmd
 
     def _get_timeout(default=15):
-        return os.getenv('RSERVER_TIMEOUT', default)
+        try:
+            return float(os.getenv('RSERVER_TIMEOUT', default))
+        except Exception:
+            return default
 
     server_process = {
         'command': _get_cmd('{port}',name,config_file),
@@ -162,7 +165,10 @@ def setup_rsession():
         ]
 
     def _get_timeout(default=15):
-        return os.getenv('RSESSION_TIMEOUT', default)
+        try:
+            return float(os.getenv('RSESSION_TIMEOUT', default))
+        except Exception:
+            return default
 
     return {
         'command': _get_cmd,
