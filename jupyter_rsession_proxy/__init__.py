@@ -47,7 +47,7 @@ def get_system_user():
     try:
         user = pwd.getpwuid(os.getuid())[0]
     except:
-        user = os.environ.get('NB_USER', getpass.getuser())
+        user = os.getenv('NB_USER', getpass.getuser())
     return(user)
 
 def setup_rserver(name='rstudio', title='RStudio', config_file=None):
@@ -84,7 +84,13 @@ def setup_rserver(name='rstudio', title='RStudio', config_file=None):
         ret = subprocess.check_output([get_rstudio_executable('rserver'), '--help'])
         return ret.decode().find(arg) != -1
 
-    def _get_cmd(port,name='rstudio',config_file=None):
+    def _get_www_frame_origin(default="same"):
+        try:
+            return os.getenv('JUPYTER_RSESSION_PROXY_WWW_FRAME_ORIGIN', default)
+        except Exception:
+            return default
+
+    def _get_cmd(port):
         ntf = tempfile.NamedTemporaryFile()
 
         # use mkdtemp() so the directory and its contents don't vanish when
@@ -95,7 +101,7 @@ def setup_rserver(name='rstudio', title='RStudio', config_file=None):
         cmd = [
             get_rstudio_executable('rserver'),
             '--auth-none=1',
-            '--www-frame-origin=same',
+            '--www-frame-origin=' + _get_www_frame_origin(),
             '--www-port=' + str(port),
             '--www-verify-user-agent=0',
             '--secure-cookie-key-file=' + ntf.name,
