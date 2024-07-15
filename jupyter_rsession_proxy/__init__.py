@@ -90,7 +90,7 @@ def setup_rserver(name='rstudio', title='RStudio', config_file=None):
         except Exception:
             return default
 
-    def _get_cmd(port):
+    def _get_cmd(port,name='rstudio',config_file=None):
         ntf = tempfile.NamedTemporaryFile()
 
         # use mkdtemp() so the directory and its contents don't vanish when
